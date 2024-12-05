@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
+import { Link } from 'react-router-dom';
 
 const MonitoriaList = () => {
   const [monitorias, setMonitorias] = useState([]);
@@ -71,7 +72,18 @@ const MonitoriaList = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h2 className="text-2xl font-bold text-center mb-4">Monitorias do Semestre</h2>
+      {/* <h2 className="text-2xl font-bold text-center mb-4">Monitorias do Semestre</h2> */}
+
+      <nav className="bg-emerald-800 p-4 rounded mb-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-white text-lg font-bold">Monitorias do Semestre</h1>
+          <div>
+            <Link to="/" className="text-gray-200 font-bold hover:text-white px-4">Cadastro</Link>
+            <Link to="/sobre" className="text-gray-200 font-bold hover:text-white px-4">Sobre</Link>
+          </div>
+        </div>
+      </nav>
+
       <table className="w-full border-collapse">
         <thead>
           <tr>
@@ -92,7 +104,7 @@ const MonitoriaList = () => {
                 <a href={monitoria.pdf_frequencia} target="_blank" rel="noopener noreferrer" className="text-blue-500">Ver PDF</a>
               </td>
               <td className="p-2 border text-center">
-                <button onClick={() => handleEdit(monitoria)} className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition">Editar</button>
+                <button onClick={() => handleEdit(monitoria)} className="bg-emerald-700 text-white px-3 py-1 rounded hover:bg-emerald-800 transition">Editar</button>
                 <button onClick={() => handleDelete(monitoria)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition ml-2">Excluir</button>
               </td>
             </tr>

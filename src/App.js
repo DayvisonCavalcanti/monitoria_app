@@ -1,9 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // Alterado para 'Routes'
 
+// import ListaMonitorias from './listaDeMonitorias';
 import CadastroMonitoria from './cadastroDeMonitorias';
 import MonitoriaForm from './listaMonitorias';
-import ListaMonitorias from './listaDeMonitorias';
 import Sobre from './sobre';
 
 const App = () => {
