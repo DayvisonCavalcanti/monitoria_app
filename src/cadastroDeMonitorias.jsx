@@ -12,7 +12,7 @@ const MonitoriaForm = () => {
   const [orientadorTelefone, setOrientadorTelefone] = useState('');
   const [orientadorMatricula, setOrientadorMatricula] = useState('');
   const [disciplinaNome, setDisciplinaNome] = useState('');
-  const [pdfFrequencia, setPdfFrequencia] = useState(null);
+  const [pdfFrequencia, setPdfFrequencia] = useState('');
 
   // Função para lidar com o upload de arquivo PDF
   const handleFileChange = (e) => {
@@ -22,62 +22,82 @@ const MonitoriaForm = () => {
   // Função para submeter o formulário
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Verifica se o arquivo PDF foi enviado
+  
+    // Verifica se o arquivo PDF foi selecionado
     if (!pdfFrequencia) {
       alert('Por favor, faça o upload do relatório de frequência.');
-      return;
+      return; // Impede o envio do formulário se não houver arquivo
     }
-
-    // Upload do arquivo PDF para o Supabase Storage
-    const { data, error } = await supabase.storage
-      .from('RELATORIOS_FREQUENCIA')
-      .upload(`monitorias/${pdfFrequencia.name}`, pdfFrequencia);
-
-    if (error) {
-      alert('Erro ao fazer upload do arquivo.');
-      return;
-    }
-
-    // Obtém a URL pública do PDF carregado
-    const pdfUrl = supabase.storage.from('frequencia').getPublicUrl(data.path).publicURL;
-
-    // Inserção de dados na tabela monitorias no banco de dados
-    const { error: insertError } = await supabase
-      .from('monitorias')
-      .insert([
-        {
-          estudante_nome: estudanteNome,
-          estudante_email: estudanteEmail,
-          estudante_telefone: estudanteTelefone,
-          estudante_matricula: estudanteMatricula,
-          orientador_nome: orientadorNome,
-          orientador_email: orientadorEmail,
-          orientador_telefone: orientadorTelefone,
-          orientador_matricula: orientadorMatricula,
-          disciplina_nome: disciplinaNome,
-          pdf_frequencia: pdfUrl,
-        },
-      ]);
-
-    // Verifica se ocorreu algum erro ao inserir os dados no banco
-    if (insertError) {
-      alert('Erro ao cadastrar monitoria.');
-    } else {
-      alert('Monitoria cadastrada com sucesso!');
-      // Limpar os campos após o cadastro
-      setEstudanteNome('');
-      setEstudanteEmail('');
-      setEstudanteTelefone('');
-      setEstudanteMatricula('');
-      setOrientadorNome('');
-      setOrientadorEmail('');
-      setOrientadorTelefone('');
-      setOrientadorMatricula('');
-      setDisciplinaNome('');
-      setPdfFrequencia(null);
+  
+    try {
+      // Faz o upload do arquivo PDF para o Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('RELATORIOS_FREQUENCIA') // O nome do seu bucket
+        .upload(`monitorias/${pdfFrequencia.name}`, pdfFrequencia);
+  
+      if (error) {
+        console.error('Erro ao fazer upload do arquivo:', error);
+        alert('Erro ao fazer upload do arquivo.');
+        return; // Impede a continuação caso o upload falhe
+      }
+  
+      // Obtém a URL pública do arquivo PDF carregado
+      const pdfUrl = supabase.storage
+        .from('RELATORIOS_FREQUENCIA')
+        .getPublicUrl(data.path);
+  
+      if (!pdfUrl) {
+        console.error('URL do PDF não encontrada');
+        alert('Erro ao obter a URL do PDF.');
+        return;
+      }
+  
+      console.log(data)
+      console.log('URL do PDF:', pdfUrl); // Exibe a URL no console para depuração
+  
+      // Agora, insere os dados na tabela 'monitorias' no banco de dados
+      const { error: insertError } = await supabase
+        .from('monitorias')
+        .insert([
+          {
+            estudante_nome: estudanteNome,
+            estudante_email: estudanteEmail,
+            estudante_telefone: estudanteTelefone,
+            estudante_matricula: estudanteMatricula,
+            orientador_nome: orientadorNome,
+            orientador_email: orientadorEmail,
+            orientador_telefone: orientadorTelefone,
+            orientador_matricula: orientadorMatricula,
+            disciplina_nome: disciplinaNome,
+            pdf_frequencia: pdfUrl, // Envia a URL do arquivo PDF
+          },
+        ]);
+  
+      if (insertError) {
+        console.error('Erro ao cadastrar monitoria:', insertError);
+        alert('Erro ao cadastrar monitoria.');
+      } else {
+        alert('Monitoria cadastrada com sucesso!');
+  
+        // Limpa os campos após o cadastro
+        setEstudanteNome('');
+        setEstudanteEmail('');
+        setEstudanteTelefone('');
+        setEstudanteMatricula('');
+        setOrientadorNome('');
+        setOrientadorEmail('');
+        setOrientadorTelefone('');
+        setOrientadorMatricula('');
+        setDisciplinaNome('');
+        setPdfFrequencia('');
+      }
+    } catch (error) {
+      console.error('Erro durante o envio do formulário:', error);
+      alert('Houve um erro ao enviar o formulário.');
     }
   };
+  
+  
 
   return (
     <form className="max-w-xl mx-auto p-6 bg-white rounded-lg shadow-md" onSubmit={handleSubmit}>
