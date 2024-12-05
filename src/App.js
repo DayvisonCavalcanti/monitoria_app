@@ -1,25 +1,22 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // Alterado para 'Routes'
 
-function App() {
+import CadastroMonitoria from './cadastroDeMonitorias';
+import ListaMonitorias from './listaDeMonitorias';
+import Sobre from './sobre';
+
+const App = () => {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <div className="App">
+        <Routes> {/* Substituído 'Switch' por 'Routes' */}
+          <Route path="/" element={<CadastroMonitoria />} /> {/* Substituído 'component' por 'element' */}
+          <Route path="/lista" element={<ListaMonitorias />} /> {/* Substituído 'component' por 'element' */}
+          <Route path="/sobre" element={<Sobre />} /> {/* Substituído 'component' por 'element' */}
+        </Routes>
+      </div>
+    </Router>
   );
-}
+};
 
 export default App;
