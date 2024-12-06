@@ -26,9 +26,9 @@ const Sobre = () => {
         <h2 className="text-xl font-semibold mb-2">Equipe de Desenvolvimento</h2>
         <p className="text-gray-700 mb-2">A equipe responsável pelo desenvolvimento deste sistema é composta por:</p>
         <ul className="list-disc list-inside text-gray-700">
-          <li>Desenvolvedor 1 - Frontend</li>
-          <li>Desenvolvedor 2 - Backend</li>
-          <li>Desenvolvedor 3 - Design</li>
+          <li>Desenvolvedora 1 - Ana Carolina</li>
+          <li>Desenvolvedor 2 - Paulo Henrique</li>
+          <li>Desenvolvedor 3 - Dayvison Cavalcanti</li>
         </ul>
       </section>
 

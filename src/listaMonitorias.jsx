@@ -92,53 +92,54 @@ const MonitoriaList = () => {
   const confirmDelete = async () => {
     try {
       const pdfUrl = selectedMonitoria.pdf_frequencia;
-
+  
       console.log("PDF URL original:", pdfUrl);
-
+  
       if (pdfUrl) {
-        const filePath = pdfUrl.split("RELATORIOS_FREQUENCIA/")[1].trim();
-
+        // Certifique-se de que o caminho do arquivo está correto
+        const filePath = pdfUrl.split("RELATORIOS_FREQUENCIA/")[1]?.replace(/"}}$/, '');
+  
         console.log("Caminho do arquivo a ser excluído:", filePath);
-
+  
         if (!filePath) {
           console.error("Erro: Caminho do arquivo não encontrado.");
           return;
         }
-
+  
+        // Excluir o arquivo no Supabase Storage
         const { error: storageError } = await supabase.storage
           .from("RELATORIOS_FREQUENCIA")
           .remove([filePath]);
-
+  
         if (storageError) {
-          console.error(
-            "Erro ao excluir o arquivo no storage:",
-            storageError.message
-          );
+          console.error("Erro ao excluir o arquivo no storage:", storageError.message);
           return;
         }
         console.log(`Arquivo ${filePath} excluído com sucesso do storage.`);
       } else {
-        console.error("Caminho do arquivo não encontrado.");
+        console.error("Erro: PDF URL não encontrada.");
         return;
       }
-
+  
+      // Excluir a monitoria do banco de dados
       const { error } = await supabase
         .from("monitorias")
         .delete()
         .eq("id", selectedMonitoria.id);
-
+  
       if (error) {
         console.error("Erro ao excluir monitoria:", error.message);
       } else {
         console.log("Monitoria excluída com sucesso.");
         setMonitorias(monitorias.filter((m) => m.id !== selectedMonitoria.id));
       }
-
+  
       setModalVisible(false);
     } catch (error) {
       console.error("Erro durante a exclusão:", error.message);
     }
   };
+  
 
   const handleUpdate = async (event) => {
     event.preventDefault();
@@ -147,14 +148,14 @@ const MonitoriaList = () => {
       disciplina_nome: event.target.disciplina_nome.value,
       estudante_nome: event.target.estudante_nome.value,
       orientador_nome: event.target.orientador_nome.value,
-      pdf_frequencia: event.target.pdf_frequencia.value,
+     // pdf_frequencia: event.target.pdf_frequencia.value,
     };
 
     if (
       updatedData.disciplina_nome !== selectedMonitoria.disciplina_nome ||
       updatedData.estudante_nome !== selectedMonitoria.estudante_nome ||
-      updatedData.orientador_nome !== selectedMonitoria.orientador_nome ||
-      updatedData.pdf_frequencia !== selectedMonitoria.pdf_frequencia
+      updatedData.orientador_nome !== selectedMonitoria.orientador_nome 
+      //updatedData.pdf_frequencia !== selectedMonitoria.pdf_frequencia
     ) {
       const { error } = await supabase
         .from("monitorias")
@@ -305,7 +306,7 @@ const MonitoriaList = () => {
                 required
               />
             </label>
-            <label className="block mb-2">
+            {/* <label className="block mb-2">
               PDF Frequência:
               <input
                 type="url"
@@ -314,7 +315,7 @@ const MonitoriaList = () => {
                 className="border p-2 w-full"
                 required
               />
-            </label>
+            </label> */}
             <div className="flex justify-end mt-4">
               <button
                 onClick={() => setIsEditing(false)}
