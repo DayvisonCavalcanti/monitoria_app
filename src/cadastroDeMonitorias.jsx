@@ -96,6 +96,7 @@ const MonitoriaForm = () => {
   };
 
   return (
+    <div className='flex-1 bg-gray-50 min-h-screen'>
     <div className="max-w-4xl mx-auto p-6">
       {/* Barra de Navegação */}
       <nav className="bg-emerald-800 p-4 rounded mb-6">
@@ -108,7 +109,7 @@ const MonitoriaForm = () => {
         </div>
       </nav>
 
-      <form className="bg-white rounded-lg shadow-md p-6" onSubmit={handleSubmit}>
+      <form className="bg-white rounded-lg shadow-xl p-6" onSubmit={handleSubmit}>
         {/* <h2 className="text-2xl font-bold text-center mb-4">Cadastrar Monitoria</h2> */}
 
         {/* Dados do Estudante */}
@@ -230,6 +231,7 @@ const MonitoriaForm = () => {
           Cadastrar
         </button>
       </form>
+    </div>
     </div>
   );
 };
