@@ -64,7 +64,7 @@ const Login = () => {
       </form>
 
       <div className='flex justify-center pt-3'>
-        <p>Primeiro acesso? <a className="font-bold text-emerald-700" href='/cadastro'>Cadastrar</a></p>
+        <p>Primeiro acesso? <a className="font-bold text-emerald-700" href='/user'>Cadastrar</a></p>
       </div>
     </div>
   </div>
