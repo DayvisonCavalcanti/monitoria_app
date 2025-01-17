@@ -105,6 +105,7 @@ const MonitoriaForm = () => {
           <div>
             <Link to="/lista" className="text-gray-200 font-bold hover:text-white px-4">Monitorias</Link>
             <Link to="/sobre" className="text-gray-200 font-bold hover:text-white px-4">Sobre</Link>
+            <Link to="/" className="text-gray-200 font-bold hover:text-white px-4">Sair</Link> 
           </div>
         </div>
       </nav>
