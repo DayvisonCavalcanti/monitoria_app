@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from './utils/supabase';
+import { supabase } from './utils/supabase'
 import { Link, useNavigate } from 'react-router-dom';
 import { UserAuth } from './context/AuthContext';
 
@@ -39,11 +39,9 @@ const CadastroUserForm = () => {
     }
   };
 
-
   useEffect(() => {
     fetchUserCurso(); // Chama a função ao montar o componente
   }, []);
-
 
   useEffect(() => {
     // Verifica o domínio do e-mail
@@ -74,14 +72,14 @@ const CadastroUserForm = () => {
     try {
       const result = await signUpNewUser (email, password);
       if (result.success) {
-        // Agora, insere os dados na tabela 'students' no banco de dados
+        // Agora, insere os dados na tabela apropriada no banco de dados
         const { error: insertError } = await supabase
           .from(table)
           .insert([
             {
               nome: userNome,
+              email: email,
               matricula: userMatricula,
-              curso_id: userCurso,
             },
           ]);
 
@@ -132,6 +130,8 @@ const CadastroUserForm = () => {
                 value={userNome}
                 onChange={(e) => setUserNome(e.target.value)}
                 required
+                onInvalid={(e) => e.target.setCustomValidity('Por favor, insira seu nome!')}
+                onInput={(e) => e.target.setCustomValidity('')} 
               />
             </div>
             <div>
@@ -143,6 +143,8 @@ const CadastroUserForm = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                onInvalid={(e) => e.target.setCustomValidity('E-mail institucional')}
+                onInput={(e) => e.target.setCustomValidity('')} 
               />
             </div>
           </div>
@@ -165,6 +167,8 @@ const CadastroUserForm = () => {
                 value={userMatricula}
                 onChange={(e) => setUserMatricula(e.target.value)}
                 required
+                onInvalid={(e) => e.target.setCustomValidity('Por favor, insira sua matrícula')}
+                onInput={(e) => e.target.setCustomValidity('')} 
               />
             </div>
             <div>
@@ -180,7 +184,9 @@ const CadastroUserForm = () => {
                 {isDocente ? (
                   <option value='78d231cd-c53a-4a65-a746-2d3ca4a55ba7'>Docente</option>
                 ) : (
-                  cursos.map((curso) => (
+                  cursos
+                  .filter((curso) => curso.nome !== 'Docente')
+                  .map((curso) => (
                     <option key={curso.id} value={curso.id}>{curso.nome}</option>
                   ))
                 )}

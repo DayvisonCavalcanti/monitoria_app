@@ -1,16 +1,46 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Sobre = () => {
+  //   const navigate = useNavigate()
+
+  //   const handleLogout = async () => {
+  //     if (isGoogle) {
+  //         // Logout from Firebase
+  //         try {
+  //             await auth.signOut();
+  //             console.log("User  signed out successfully from Firebase");
+  //             navigate('/'); // Redirect to home or login page
+  //         } catch (error) {
+  //             console.error("Sign out error from Firebase: ", error);
+  //         }
+  //     } else {
+  //         // Logout from Supabase
+  //         try {
+  //             const { error } = await supabase.auth.signOut();
+  //             if (error) {
+  //                 console.error("Sign out error from Supabase: ", error);
+  //             } else {
+  //                 console.log("User  signed out successfully from Supabase");
+  //                 navigate('/'); // Redirect to home or login page
+  //             }
+  //         } catch (error) {
+  //             console.error("Unexpected error during sign out from Supabase: ", error);
+  //         }
+  //     }
+  // };
   return (
     <div className="max-w-4xl mx-auto p-6">
       <nav className="bg-emerald-800 p-4 rounded mb-6">
         <div className="flex justify-between items-center">
           <h1 className="text-white text-lg font-bold">Sobre o Sistema de Monitoria</h1>
           <div>
-            <Link to="/" className="text-gray-200 font-bold hover:text-white px-4">Cadastro</Link>
-            <Link to="/lista" className="text-gray-200 font-bold hover:text-white px-4">Monitorias</Link>
-            <Link to="/sobre" className="text-gray-200 font-bold hover:text-white px-4">Sobre</Link>
+            {/* <Link to="/" className="text-gray-200 font-bold hover:text-white px-4">Cadastro</Link> */}
+            {/* <Link to="/lista" className="text-gray-200 font-bold hover:text-white px-4">Monitorias</Link> */}
+            <Link to="/" className="text-gray-200 font-bold hover:text-white px-4">Sair</Link>
+            {/* <button onClick={handleLogout} className="text-gray-200 font-bold hover:text-white px-4"> */}
+                {/* Sair */}
+            {/* </button> */}
           </div>
         </div>
       </nav>

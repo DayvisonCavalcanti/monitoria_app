@@ -1,5 +1,5 @@
 import { createContext, useEffect, useState, useContext } from "react";
-import { supabase } from '../utils/supabase';
+import { supabase } from '../utils/supabase.js';
 
 const AuthContext = createContext ();
 
@@ -53,12 +53,18 @@ export const AuthContextProvider = ({children}) => {
         };
     }, []);
 
-    const signOut = () => {
-        const { error } = supabase.auth.signOut();
-        if (error) {
-            console.error("Sign out problem", error)
+    const signOut = async () => {
+        try {
+            const { error } = await supabase.auth.signOut(); // Await the signOut call
+            if (error) {
+                console.error("Sign out problem", error);
+            } else {
+                console.log("User  signed out successfully")
+            }
+        } catch (err) {
+            console.error("An unexpected error occurred during sign out:", err);
         }
-    }
+    };
 
     return (
         <AuthContext.Provider value={{session, signUpNewUser, signInUser, signOut}}>

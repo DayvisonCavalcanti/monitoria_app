@@ -3,15 +3,13 @@ import React, { useState } from 'react';
 import { auth, provider } from './firebaseConfig';
 import { signInWithPopup } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from './utils/supabase'; // Ensure you import your Supabase client
+import { supabase } from './utils/supabase'; // Ensure you impot your Supabase client
 
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-
-  console.log(email,password)
 
   const signInWithEmail = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -32,14 +30,17 @@ const Login = () => {
     setErrorMessage(''); // Clear previous error message
 
     const result = await signInWithEmail(email, password);
-    if (result.success) {
+    let domain = email.split('@')[1]
+    if (result.success && domain === 'discente.ifpe.edu.br' ) {
       console.log('Login successful:', result.user);
       navigate('/cadastro'); // Redirect to the desired page
+    } else if (result.success && domain === 'jaboatao.ifpe.edu.br' ) {
+      console.log('Login successful:', result.user);
+      navigate('/sobre'); // Redirect to the desired page
     } else {
-      setErrorMessage(result.error); // Display error message
-      setPassword(''); // Clear password field on error
-    }
-  };
+    setErrorMessage(result.error); // Display error message
+    setPassword(''); // Clear password field on error
+  }};
 
   const handleLogin = async () => {
     try {
@@ -48,16 +49,19 @@ const Login = () => {
 
       // Verify email domain
       const emailDomain = user.email.split('@')[1];
-      if (emailDomain === 'discente.ifpe.edu.br' || emailDomain === 'jaboatao.ifpe.edu.br') {
+      if (emailDomain === 'jaboatao.ifpe.edu.br') {
         console.log('Login successful:', user);
-        navigate('/cadastro');
-      } else {
-        alert('Access denied. You must use an institutional email to access the system!');
+        navigate('/sobre');
+      } else if (emailDomain === 'discente.ifpe.edu.br'){
+        console.log('Login successful:', user);
+        navigate('/cadastro')
+      }else{
+        alert('Accesso negado. Utilize um email institucional para acessar o sistema!');
         // Sign out the user
         await auth.signOut();
       }
     } catch (error) {
-      console.error('Error during Google login:', error);
+      console.error('Erro durante o login com Google:', error);
     }
   };
 

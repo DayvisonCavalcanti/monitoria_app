@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { supabase } from './supabaseClient';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { supabase } from './utils/supabase.js';
+import { Link, useNavigate } from 'react-router-dom';
+import { UserAuth } from './context/AuthContext';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 const MonitoriaForm = () => {
   // Estados do formulário
@@ -12,40 +14,138 @@ const MonitoriaForm = () => {
   const [orientadorEmail, setOrientadorEmail] = useState('');
   const [orientadorTelefone, setOrientadorTelefone] = useState('');
   const [orientadorMatricula, setOrientadorMatricula] = useState('');
-  const [disciplinaNome, setDisciplinaNome] = useState('');
+  const [userCurso, setUserCurso] = useState('');
   const [pdfFrequencia, setPdfFrequencia] = useState('');
+  const [cursos, setCursos] = useState([]);
+  const [fieldsDisabled, setFieldsDisabled] = useState(true);
 
-  // Função para lidar com o upload de arquivo PDF
+  const auth = getAuth();
+  const { session, signOut } = UserAuth();
+  const [isGoogle, setIsGoogle] = useState(false);
+  const [isSupa, setIsSupabase] = useState(false);
+
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    if (isGoogle) {
+        // Logout from Firebase
+        try {
+            await auth.signOut();
+            console.log("User  signed out successfully from Firebase");
+            navigate('/'); // Redirect to home or login page
+        } catch (error) {
+            console.error("Sign out error from Firebase: ", error);
+        }
+    } else {
+        // Logout from Supabase
+        try {
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+                console.error("Sign out error from Supabase: ", error);
+            } else {
+                console.log("User  signed out successfully from Supabase");
+                navigate('/'); // Redirect to home or login page
+            }
+        } catch (error) {
+            console.error("Unexpected error during sign out from Supabase: ", error);
+        }
+    }
+};
+
+  const fetchStudent = async (email) => {
+    try {
+      const { data, error } = await supabase
+        .from("students")
+        .select("nome")
+        .eq('email', email);
+
+      if (error) {
+        console.error("Erro ao buscar estudante:", error);
+      } else {
+        setEstudanteNome(data[0]?.nome || ''); // Use o primeiro item do array
+      }
+    } catch (error) {
+      console.error("Erro ao buscar estudante:", error);
+    }
+  };
+
+  useEffect(() => {
+    // Monitorar autenticação do Firebase
+    const unsubscribeFirebase = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setIsGoogle(true);
+        setIsSupabase(false);
+        setEstudanteEmail(user.email);
+        setFieldsDisabled(true)
+      } else {
+        setIsGoogle(false);
+        setFieldsDisabled(false)
+      }
+    });
+
+    // Monitorar autenticação do Supabase
+    const { data: { session } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        setIsSupabase(true);
+        setIsGoogle(false);
+        fetchStudent(session.user.email); // Busca o estudante usando o email do Supabase
+      } else {
+        setIsSupabase(false);
+      }
+    });
+
+    return () => {
+      unsubscribeFirebase();
+    };
+  }, [auth]);
+
+  const fetchUserCurso = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("courses")
+        .select("*")
+        .order("nome", { ascending: true });
+
+      if (error) {
+        console.error("Erro ao buscar cursos:", error);
+      } else {
+        setCursos(data);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar cursos:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserCurso(); // Chama a função ao montar o componente
+  }, []);
+
   const handleFileChange = (e) => {
     setPdfFrequencia(e.target.files[0]);
   };
 
-  // Função para submeter o formulário
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Verifica se o arquivo PDF foi selecionado
     if (!pdfFrequencia) {
       alert('Por favor, faça o upload do relatório de frequência.');
-      return; // Impede o envio do formulário se não houver arquivo
+      return;
     }
 
     try {
-      // Faz o upload do arquivo PDF para o Supabase Storage
       const { data, error } = await supabase.storage
-        .from('RELATORIOS_FREQUENCIA') // O nome do seu bucket
+        .from('REL ATORIOS_FREQUENCIA')
         .upload(`monitorias/${pdfFrequencia.name}`, pdfFrequencia);
 
       if (error) {
         console.error('Erro ao fazer upload do arquivo:', error);
         alert('Erro ao fazer upload do arquivo.');
-        return; // Impede a continuação caso o upload falhe
+        return;
       }
 
-      // Obtém a URL pública do arquivo PDF carregado
       const pdfUrl = supabase.storage
         .from('RELATORIOS_FREQUENCIA')
-        .getPublicUrl(data.path);
+        .getPublicUrl(data.path).publicURL;
 
       if (!pdfUrl) {
         console.error('URL do PDF não encontrada');
@@ -53,7 +153,6 @@ const MonitoriaForm = () => {
         return;
       }
 
-      // Agora, insere os dados na tabela 'monitorias' no banco de dados
       const { error: insertError } = await supabase
         .from('monitorias')
         .insert([
@@ -66,8 +165,8 @@ const MonitoriaForm = () => {
             orientador_email: orientadorEmail,
             orientador_telefone: orientadorTelefone,
             orientador_matricula: orientadorMatricula,
-            disciplina_nome: disciplinaNome,
-            pdf_frequencia: pdfUrl, // Envia a URL do arquivo PDF
+            disciplina_nome: userCurso,
+            pdf_frequencia: pdfUrl,
           },
         ]);
 
@@ -76,8 +175,6 @@ const MonitoriaForm = () => {
         alert('Erro ao cadastrar monitoria.');
       } else {
         alert('Monitoria cadastrada com sucesso!');
-
-        // Limpa os campos após o cadastro
         setEstudanteNome('');
         setEstudanteEmail('');
         setEstudanteTelefone('');
@@ -86,7 +183,7 @@ const MonitoriaForm = () => {
         setOrientadorEmail('');
         setOrientadorTelefone('');
         setOrientadorMatricula('');
-        setDisciplinaNome('');
+        setUserCurso('');
         setPdfFrequencia('');
       }
     } catch (error) {
@@ -97,142 +194,143 @@ const MonitoriaForm = () => {
 
   return (
     <div className='flex-1 bg-gray-50 min-h-screen'>
-    <div className="max-w-4xl mx-auto p-6">
-      {/* Barra de Navegação */}
-      <nav className="bg-emerald-800 p-4 rounded mb-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-white text-lg font-bold">Sistema de Monitoria</h1>
-          <div>
-            <Link to="/lista" className="text-gray-200 font-bold hover:text-white px-4">Monitorias</Link>
-            <Link to="/sobre" className="text-gray-200 font-bold hover:text-white px-4">Sobre</Link>
-            <Link to="/" className="text-gray-200 font-bold hover:text-white px-4">Sair</Link> 
+      <div className="max-w-4xl mx-auto p-6">
+        <nav className="bg-emerald-800 p-4 rounded mb-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-white text-lg font-bold">Sistema de Monitoria</h1>
+            <div className='flex flex-row'>
+              <p className="text-gray-200 font-bold hover:text-white px-4">Olá, {estudanteEmail}</p>
+              <button onClick={handleLogout} className="text-gray-200 font-bold hover:text-white px-4">
+                Sair
+              </button>
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
 
-      <form className="bg-white rounded-lg shadow-xl p-6" onSubmit={handleSubmit}>
-        {/* <h2 className="text-2xl font-bold text-center mb-4">Cadastrar Monitoria</h2> */}
+        <form className="bg-white rounded-lg shadow-xl p-6" onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-gray-700">Nome do Estudante</label>
+              <input
+                type="text"
+                className="w-full p-2 border rounded"
+                value={estudanteNome}
+                onChange={(e) => setEstudanteNome(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-gray-700">Email do Estudante</label>
+              <input
+                type="email"
+                className="w-full p-2 border rounded"
+                disabled={fieldsDisabled}
+                value={estudanteEmail}
+                onChange={(e) => setEstudanteEmail(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-gray-700">Telefone do Estudante</label>
+              <input
+                type="text"
+                className="w-full p-2 border rounded"
+                value={estudanteTelefone}
+                onChange={(e) => setEstudanteTelefone(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-gray-700">Matrícula do Estudante</label>
+              <input
+                type="text"
+                className="w-full p-2 border rounded"
+                value={estudanteMatricula}
+                onChange={(e) => setEstudanteMatricula(e.target.value)}
+                required
+              />
+            </div>
+          </div>
 
-        {/* Dados do Estudante */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-gray-700">Nome do Estudante</label>
-            <input
-              type="text"
-              className="w-full p-2 border rounded"
-              value={estudanteNome}
-              onChange={(e) => setEstudanteNome(e.target.value)}
-              required
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-gray-700">Nome do Orientador</label>
+              <input
+                type="text"
+                className="w-full p-2 border rounded"
+                value={orientadorNome}
+                onChange={(e) => setOrientadorNome(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-gray-700">Email do Orientador</label>
+              <input
+                type="email"
+                className="w-full p-2 border rounded"
+                value={orientadorEmail}
+                onChange={(e) => setOrientadorEmail(e.target.value)}
+                required
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-gray-700">Email do Estudante</label>
-            <input
-              type="email"
-              className="w-full p-2 border rounded"
-              value={estudanteEmail}
-              onChange={(e) => setEstudanteEmail(e.target.value)}
-              required
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-gray-700">Telefone do Orientador</label>
+              <input
+                type="text"
+                className="w-full p-2 border rounded"
+                value={orientadorTelefone}
+                onChange={(e) => setOrientadorTelefone(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-gray-700">Matrícula do Orientador</label>
+              <input
+                type="text"
+                className="w-full p-2 border rounded"
+                value={orientadorMatricula}
+                onChange={(e) => setOrientadorMatricula(e.target.value)}
+                required
+              />
+            </div>
           </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-gray-700">Telefone do Estudante</label>
-            <input
-              type="text"
-              className="w-full p-2 border rounded"
-              value={estudanteTelefone}
-              onChange={(e) => setEstudanteTelefone(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700">Matrícula do Estudante</label>
-            <input
-              type="text"
-              className="w-full p-2 border rounded"
-              value={estudanteMatricula}
-              onChange={(e) => setEstudanteMatricula(e.target.value)}
-              required
-            />
-          </div>
-        </div>
 
-        {/* Dados do Orientador */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-gray-700">Nome do Orientador</label>
-            <input
-              type="text"
-              className="w-full p-2 border rounded"
-              value={orientadorNome}
-              onChange={(e) => setOrientadorNome(e.target.value)}
+          <div className="mb-4">
+            <label className="block text-gray-700">Disciplina</label>
+            <select
+              className="w-full p-2 border-solid border-2 bg-transparent rounded"
+              value={userCurso}
+              onChange={(e) => setUserCurso(e.target.value)}
               required
-            />
+            >
+              <option value="" disabled>Selecione um curso</option>
+              {cursos
+                .filter(curso => curso.nome !== 'Docente')
+                .map((curso) => (
+                  <option key={curso.id} value={curso.id}>{curso.nome}</option>
+                ))}
+            </select>
           </div>
-          <div>
-            <label className="block text-gray-700">Email do Orientador</label>
-            <input
-              type="email"
-              className="w-full p-2 border rounded"
-              value={orientadorEmail}
-              onChange={(e) => setOrientadorEmail(e.target.value)}
-              required
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-gray-700">Telefone do Orientador</label>
-            <input
-              type="text"
-              className="w-full p-2 border rounded"
-              value={orientadorTelefone}
-              onChange={(e) => setOrientadorTelefone(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700">Matrícula do Orientador</label>
-            <input
-              type="text"
-              className="w-full p-2 border rounded"
-              value={orientadorMatricula}
-              onChange={(e) => setOrientadorMatricula(e.target.value)}
-              required
-            />
-          </div>
-        </div>
 
-        {/* Dados da Disciplina */}
-        <div className="mb-4">
-          <label className="block text-gray-700">Disciplina</label>
-          <input
-            type="text"
-            className="w-full p-2 border rounded"
-            value={disciplinaNome}
-            onChange={(e) => setDisciplinaNome(e.target.value)}
-            required
-          />
-        </div>
+          <div className="mb-4">
+            <label className="block text-gray-700">Relatório de Frequência (PDF)</label>
+            <input
+              type="file"
+              accept=".pdf"
+              onChange={handleFileChange}
+              required
+            />
+          </div>
 
-        {/* Upload PDF */}
-        <div className="mb-4">
-          <label className="block text-gray-700">Relatório de Frequência (PDF)</label>
-          <input
-            type="file"
-            accept=".pdf"
-            onChange={handleFileChange}
-            required
-          />
-        </div>
-
-        <button type="submit" className="w-full bg-emerald-700 text-white font-bold p-2 rounded mt-4">
-          Cadastrar
-        </button>
-      </form>
-    </div>
+          <button type="submit" className="w-full bg-emerald-700 text-white font-bold p-2 rounded mt-4">
+            Cadastrar
+          </button>
+        </form>
+      </div>
     </div>
   );
 };

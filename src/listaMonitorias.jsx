@@ -203,7 +203,7 @@ const MonitoriaList = () => {
           </h1>
           <div>
             <Link
-              to="/"
+              to="/cadastro"
               className="text-gray-200 font-bold hover:text-white px-4"
             >
               Cadastro
